@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT Chatbot</title>
+    <style>
+        :root {
+            --primary-color: #10a37f;
+            --secondary-color: #1a7f64;
+            --bg-color: #f7f7f8;
+            --chat-bg: #ffffff;
+            --user-bubble: #e7f7ed;
+            --bot-bubble: #f0f0f0;
+            --text-color: #343541;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 0.5rem 1rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .logo {
+            height: 36px;
+            width: 36px;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            background-color: var(--chat-bg);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+        }
+
+        .message {
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-message {
+            align-items: flex-end;
+        }
+
+        .bot-message {
+            align-items: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 80%;
+            padding: 0.75rem 1rem;
+            border-radius: 18px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .user-message .message-bubble {
+            background-color: var(--user-bubble);
+            border-bottom-right-radius: 4px;
+        }
+
+        .bot-message .message-bubble {
+            background-color: var(--bot-bubble);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-sender {
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background-color: var(--chat-bg);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        #user-input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+            font-size: 1rem;
+        }
+
+        #user-input:focus {
+            border-color: var(--primary-color);
+        }
+
+        #send-button {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 0 1.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: opacity 0.2s;
+        }
+
+        #send-button:hover {
+            opacity: 0.9;
+        }
+
+        #send-button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 0.5rem 1rem;
+            background-color: var(--bot-bubble);
+            border-radius: 18px;
+            margin-bottom: 1rem;
+            align-self: flex-start;
+        }
+
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background-color: #666;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 2px;
+            animation: bounce 1.5s infinite ease-in-out;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        .voice-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .voice-button:hover {
+            background: rgba(0,0,0,0.1);
+        }
+
+        .voice-button img {
+            width: 16px;
+            height: 16px;
+        }
+
+        @keyframes bounce {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-5px);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .chat-container {
+                padding: 0.5rem;
+            }
+            
+            .message-bubble {
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" alt="ChatGPT Logo" class="logo">
+        <h1>ChatGPT Chatbot</h1>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-messages" id="chat-messages">
+            <div class="message bot-message">
+                <div class="message-sender">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" alt="ChatGPT" style="width:16px;height:16px;">
+                    ChatGPT
+                </div>
+                <div class="message-bubble">Halo! Saya adalah ChatGPT. Ada yang bisa saya bantu?</div>
+            </div>
+        </div>
+
+        <div class="typing-indicator" id="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="Ketik pesan Anda..." autocomplete="off">
+            <button id="send-button">Kirim</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatMessages = document.getElementById('chat-messages');
+            const userInput = document.getElementById('user-input');
+            const sendButton = document.getElementById('send-button');
+            const typingIndicator = document.getElementById('typing-indicator');
+            const synth = window.speechSynthesis;
+
+            // Simpan riwayat percakapan
+            let conversationHistory = [
+                {
+                    role: "system",
+                    content: "Anda adalah asisten AI yang membantu. Berikan jawaban yang jelas dan ramah."
+                },
+                {
+                    role: "assistant",
+                    content: "Halo! Saya adalah ChatGPT. Ada yang bisa saya bantu?"
+                }
+            ];
+
+            // Fungsi untuk menambahkan pesan ke chat
+            function addMessage(sender, message, isUser = false, isSystem = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+                
+                const senderDiv = document.createElement('div');
+                senderDiv.className = 'message-sender';
+                
+                if (!isSystem) {
+                    if (isUser) {
+                        senderDiv.textContent = sender;
+                    } else {
+                        const logoImg = document.createElement('img');
+                        logoImg.src = 'https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg';
+                        logoImg.alt = 'ChatGPT';
+                        logoImg.style.width = '16px';
+                        logoImg.style.height = '16px';
+                        senderDiv.appendChild(logoImg);
+                        senderDiv.appendChild(document.createTextNode(' ' + sender));
+                        
+                        // Tambahkan tombol voice
+                        if (!isUser) {
+                            const voiceButton = document.createElement('button');
+                            voiceButton.className = 'voice-button';
+                            voiceButton.innerHTML = '<img src="https://cdn-icons-png.flaticon.com/512/2965/2965938.png" alt="Voice">';
+                            voiceButton.title = 'Dengarkan';
+                            voiceButton.addEventListener('click', () => speakMessage(message));
+                            senderDiv.appendChild(voiceButton);
+                        }
+                    }
+                }
+                
+                const bubbleDiv = document.createElement('div');
+                bubbleDiv.className = 'message-bubble';
+                bubbleDiv.textContent = message;
+                
+                messageDiv.appendChild(senderDiv);
+                messageDiv.appendChild(bubbleDiv);
+                chatMessages.appendChild(messageDiv);
+                
+                // Scroll ke bawah
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            // Fungsi untuk text-to-speech
+            function speakMessage(text) {
+                if (synth.speaking) {
+                    synth.cancel();
+                }
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'id-ID'; // Atur bahasa Indonesia
+                utterance.rate = 1.0;
+                utterance.pitch = 1.0;
+                
+                synth.speak(utterance);
+            }
+
+            // Fungsi untuk mengirim pesan ke API ChatGPT
+            async function sendToChatGPT(message) {
+                showTypingIndicator();
+                
+                // Tambahkan pesan pengguna ke riwayat
+                conversationHistory.push({
+                    role: "user",
+                    content: message
+                });
+
+                try {
+                    // Ganti dengan API key ChatGPT Anda
+                    const apiKey = await getApiKey();
+                    
+                    if (!apiKey) {
+                        throw new Error('API key tidak tersedia');
+                    }
+
+                    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: "gpt-3.5-turbo",
+                            messages: conversationHistory,
+                            temperature: 0.7,
+                            max_tokens: 2000
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error?.message || 'Terjadi kesalahan');
+                    }
+
+                    const data = await response.json();
+                    const botResponse = data.choices[0].message.content;
+                    
+                    // Tambahkan respons bot ke riwayat
+                    conversationHistory.push({
+                        role: "assistant",
+                        content: botResponse
+                    });
+                    
+                    hideTypingIndicator();
+                    return botResponse;
+                } catch (error) {
+                    hideTypingIndicator();
+                    console.error('Error:', error);
+                    return `Maaf, terjadi kesalahan: ${error.message}`;
+                }
+            }
+
+            // Fungsi untuk mendapatkan API key (simulasi)
+            async function getApiKey() {
+                // Dalam implementasi nyata, ini harus diambil dari backend yang aman
+                let apiKey = localStorage.getItem('chatgpt_api_key');
+                
+                if (!apiKey) {
+                    apiKey = prompt("Masukkan API Key ChatGPT Anda:");
+                    if (apiKey) {
+                        localStorage.setItem('chatgpt_api_key', apiKey);
+                    }
+                }
+                
+                return apiKey;
+            }
+
+            // Fungsi untuk menangani pengiriman pesan
+            async function handleSendMessage() {
+                const message = userInput.value.trim();
+                if (!message) return;
+
+                // Disable input sementara
+                userInput.disabled = true;
+                sendButton.disabled = true;
+                
+                // Tambahkan pesan pengguna
+                addMessage('Anda', message, true);
+                userInput.value = '';
+                
+                try {
+                    // Kirim ke API dan dapatkan respons
+                    const botResponse = await sendToChatGPT(message);
+                    addMessage('ChatGPT', botResponse);
+                } catch (error) {
+                    addMessage('System', `Error: ${error.message}`, false, true);
+                } finally {
+                    // Enable input kembali
+                    userInput.disabled = false;
+                    sendButton.disabled = false;
+                    userInput.focus();
+                }
+            }
+
+            // Fungsi untuk menampilkan indikator mengetik
+            function showTypingIndicator() {
+                typingIndicator.style.display = 'flex';
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            // Fungsi untuk menyembunyikan indikator mengetik
+            function hideTypingIndicator() {
+                typingIndicator.style.display = 'none';
+            }
+
+            // Event listeners
+            sendButton.addEventListener('click', handleSendMessage);
+            
+            userInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleSendMessage();
+                }
+            });
+
+            // Fokus ke input saat halaman dimuat
+            userInput.focus();
+        });
+    </script>
+</body>
+</html>
